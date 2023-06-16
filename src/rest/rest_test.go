@@ -6,21 +6,22 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"leader-board/dao"
-	daomocks "leader-board/dao/mocks"
+	"leader-board/redis"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/mock"
+	"github.com/go-redis/redismock/v9"
 	"github.com/stretchr/testify/suite"
 )
 
 const (
 	testAssignScoreURL = "/api/v1/score"
 	testGetLeadersURL  = "/api/v1/leaderboard"
+
+	testKeyPlayers = redis.KeyPlayers
 )
 
 func TestRestTestSuite(t *testing.T) {
@@ -29,15 +30,18 @@ func TestRestTestSuite(t *testing.T) {
 
 type restTestSuite struct {
 	suite.Suite
-	ginEngine     *gin.Engine
-	mockPlayerDao *daomocks.PlayerDao
+	ginEngine *gin.Engine
+	mockRedis redismock.ClientMock
 }
 
 func (s *restTestSuite) SetupSuite() {
-	s.mockPlayerDao = daomocks.NewPlayerDao(s.T())
+	mockRedisClient, mockRedis := redismock.NewClientMock()
+	s.mockRedis = mockRedis
+	redisClient := redis.NewClient(mockRedisClient)
+
 	gin.SetMode(gin.TestMode)
 	server := gin.Default()
-	RegisterHandler(server, s.mockPlayerDao)
+	RegisterHandler(server, redisClient)
 	s.ginEngine = server
 }
 
@@ -45,7 +49,7 @@ func (s *restTestSuite) SetupTest() {
 }
 
 func (s *restTestSuite) TearDownSuite() {
-	s.mockPlayerDao.AssertExpectations(s.T())
+	s.NoError(s.mockRedis.ExpectationsWereMet())
 }
 
 func (s *restTestSuite) request(
@@ -83,18 +87,18 @@ func (s *restTestSuite) TestAssignScore() {
 	reqBody := map[string]interface{}{
 		"score": 77.5,
 	}
-	player := &dao.Player{
-		ClientID: reqHeader["clientId"],
-		Score:    reqBody["score"].(float64),
+	player := redis.Z{
+		Member: reqHeader["clientId"],
+		Score:  reqBody["score"].(float64),
 	}
-	s.mockPlayerDao.EXPECT().Upsert(mock.Anything, player).Return(nil, nil).Once()
+	s.mockRedis.ExpectZAdd(testKeyPlayers, player).SetVal(1)
 
 	res, err := s.request("POST", resURL.String(), reqHeader, reqBody)
 	s.NoError(err)
 	s.Equal(http.StatusOK, res.Code)
 
 	// error 500
-	s.mockPlayerDao.EXPECT().Upsert(mock.Anything, player).Return(nil, errors.New("something went wrong")).Once()
+	s.mockRedis.ExpectZAdd(testKeyPlayers, player).SetErr(errors.New("something went wrong"))
 
 	res, err = s.request("POST", resURL.String(), reqHeader, reqBody)
 	s.NoError(err)
@@ -129,7 +133,7 @@ func (s *restTestSuite) TestGetLeaders() {
 
 	// response empty array
 	limit := 10
-	s.mockPlayerDao.EXPECT().GetTopN(mock.Anything, limit).Return([]*dao.Player{}, nil).Once()
+	s.mockRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetVal([]redis.Z{})
 
 	res, err := s.request("GET", resURL.String(), nil, nil)
 	s.NoError(err)
@@ -142,17 +146,17 @@ func (s *restTestSuite) TestGetLeaders() {
 	query.Add("unknown", "hi")
 	resURL.RawQuery = query.Encode()
 
-	mockPlayers := []*dao.Player{
+	mockPlayers := []redis.Z{
 		{
-			ClientID: "player-1",
-			Score:    1,
+			Member: "player-1",
+			Score:  1,
 		},
 		{
-			ClientID: "player-2",
-			Score:    2,
+			Member: "player-2",
+			Score:  2,
 		},
 	}
-	s.mockPlayerDao.EXPECT().GetTopN(mock.Anything, limit).Return(mockPlayers, nil).Once()
+	s.mockRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetVal(mockPlayers)
 
 	res, err = s.request("GET", resURL.String(), nil, nil)
 	s.NoError(err)
@@ -164,7 +168,7 @@ func (s *restTestSuite) TestGetLeaders() {
 	s.Equal(len(mockPlayers), len(result.TopPlayers))
 
 	// error 500
-	s.mockPlayerDao.EXPECT().GetTopN(mock.Anything, limit).Return(nil, errors.New("something went wrong")).Once()
+	s.mockRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetErr(errors.New("something went wrong"))
 
 	res, err = s.request("GET", resURL.String(), nil, nil)
 	s.NoError(err)

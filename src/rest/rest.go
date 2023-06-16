@@ -2,8 +2,8 @@ package rest
 
 import (
 	"context"
-	"leader-board/dao"
 	"leader-board/logger"
+	"leader-board/redis"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -34,17 +34,17 @@ type PostBody struct {
 }
 
 type impl struct {
-	playerDao dao.PlayerDao
-	logger    logger.Logger
+	logger      logger.Logger
+	redisClient redis.Redis
 }
 
 func RegisterHandler(
 	ginEngine *gin.Engine,
-	PlayerDao dao.PlayerDao,
+	redisClient redis.Redis,
 ) {
 	rest := &impl{
-		playerDao: PlayerDao,
-		logger:    logger.Get(),
+		logger:      logger.Get(),
+		redisClient: redisClient,
 	}
 
 	v1 := ginEngine.Group("/api/v1")
@@ -105,14 +105,8 @@ func (i *impl) assignScore(c *gin.Context) {
 		return
 	}
 
-	player := &dao.Player{
-		ClientID: header.ClientID,
-		Score:    body.Score,
-	}
-
-	_, err := i.playerDao.Upsert(c, player)
-	if err != nil {
-		i.logger.Errorf("playerDao.Upsert err: %+v", err)
+	if err := i.redisClient.ZAdd(c, redis.KeyPlayers, header.ClientID, body.Score); err != nil {
+		i.logger.Errorf("redisClient.ZAdd err: %+v", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -130,16 +124,16 @@ func (i *impl) getLeaders(c *gin.Context) {
 	}
 	limit := params.Limit
 
-	leaders, err := i.playerDao.GetTopN(c, limit)
+	leaders, err := i.redisClient.ZRevRangeWithScores(c, redis.KeyPlayers, 0, int64(limit-1))
 	if err != nil {
-		i.logger.Errorf("playerDao.GetTopN err: %+v", err)
+		i.logger.Errorf("redisClient.ZRevRangeWithScores err: %+v", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
 	topPlayers := make([]*TopPlayer, len(leaders))
 	for i := 0; i < len(leaders); i++ {
 		topPlayers[i] = &TopPlayer{
-			ClientID: leaders[i].ClientID,
+			ClientID: leaders[i].Member.(string),
 			Score:    leaders[i].Score,
 		}
 	}
