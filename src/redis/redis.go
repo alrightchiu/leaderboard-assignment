@@ -2,8 +2,15 @@ package redis
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/redis/go-redis/v9"
+)
+
+var (
+	redisHost = os.Getenv("REDIS_HOST")
+	redisPort = os.Getenv("REDIS_PORT")
 )
 
 const (
@@ -13,10 +20,15 @@ const (
 type Z = redis.Z
 
 func NewClient(client *redis.Client) Redis {
-	// TODO: move to config?
+	if redisHost == "" {
+		redisHost = "localhost"
+	}
+	if redisPort == "" {
+		redisPort = "6379"
+	}
 	if client == nil {
 		client = redis.NewClient(&redis.Options{
-			Addr:     "localhost:6379",
+			Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
 			Password: "", // no password set
 			DB:       0,  // use default DB
 		})

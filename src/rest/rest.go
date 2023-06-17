@@ -2,14 +2,20 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"leader-board/logger"
 	"leader-board/redis"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	restPort = os.Getenv("REST_PORT")
 )
 
 type TopPlayer struct {
@@ -62,7 +68,7 @@ func ListenAndServe(
 	defer stop()
 
 	srv := &http.Server{
-		Addr:    ":80",
+		Addr:    fmt.Sprintf(":%s", restPort),
 		Handler: ginEngine,
 	}
 
