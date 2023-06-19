@@ -35,4 +35,4 @@ src/go/*/main/main
 
 # for local db
 db-volume
-cache-data
+redis-volume

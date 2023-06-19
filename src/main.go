@@ -16,13 +16,15 @@ func main() {
 	logger := logger.Get()
 	ctx := context.Background()
 
-	redisClient := redis.NewClient(nil)
-	defer redisClient.Close()
+	redisMasterClient := redis.NewMasterClient()
+	defer redisMasterClient.Close()
+	redisReplicaClient := redis.NewReplicaClient()
+	defer redisReplicaClient.Close()
 
 	cronJob := cron.New(cron.WithChain(cron.SkipIfStillRunning(cron.DefaultLogger)))
 	cronJobDuration := fmt.Sprintf("@every %dm", constant.CronResetLeaderBoardDurationInMin)
 	cronJob.AddFunc(cronJobDuration, func() {
-		if err := redisClient.Del(ctx, redis.KeyPlayers); err != nil {
+		if err := redisMasterClient.Del(ctx, redis.KeyPlayers); err != nil {
 			logger.Errorf("err: %+v", err)
 		} else {
 			logger.Infof("reset redis key(%s) done", redis.KeyPlayers)
@@ -32,6 +34,6 @@ func main() {
 	defer cronJob.Stop()
 
 	engine := gin.Default()
-	rest.RegisterHandler(engine, redisClient)
+	rest.RegisterHandler(engine, redisMasterClient, redisReplicaClient)
 	rest.ListenAndServe(engine)
 }

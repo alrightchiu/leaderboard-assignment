@@ -30,18 +30,25 @@ func TestRestTestSuite(t *testing.T) {
 
 type restTestSuite struct {
 	suite.Suite
-	ginEngine *gin.Engine
-	mockRedis redismock.ClientMock
+	ginEngine              *gin.Engine
+	mockMasterRedis        redismock.ClientMock
+	mockReplicaRedis       redismock.ClientMock
+	mockMasterRedisClient  redis.Redis
+	mockReplicaRedisClient redis.Redis
 }
 
 func (s *restTestSuite) SetupSuite() {
-	mockRedisClient, mockRedis := redismock.NewClientMock()
-	s.mockRedis = mockRedis
-	redisClient := redis.NewClient(mockRedisClient)
+	mockMasterRedisClient, mockRedis := redismock.NewClientMock()
+	s.mockMasterRedis = mockRedis
+	s.mockMasterRedisClient = redis.NewMockMasterRedis(mockMasterRedisClient)
+
+	mockReplicaRedisClient, mockRedis := redismock.NewClientMock()
+	s.mockReplicaRedis = mockRedis
+	s.mockReplicaRedisClient = redis.NewMockReplicaRedis(mockReplicaRedisClient)
 
 	gin.SetMode(gin.TestMode)
 	server := gin.Default()
-	RegisterHandler(server, redisClient)
+	RegisterHandler(server, s.mockMasterRedisClient, s.mockReplicaRedisClient)
 	s.ginEngine = server
 }
 
@@ -49,7 +56,8 @@ func (s *restTestSuite) SetupTest() {
 }
 
 func (s *restTestSuite) TearDownSuite() {
-	s.NoError(s.mockRedis.ExpectationsWereMet())
+	s.NoError(s.mockMasterRedis.ExpectationsWereMet())
+	s.NoError(s.mockReplicaRedis.ExpectationsWereMet())
 }
 
 func (s *restTestSuite) request(
@@ -91,14 +99,14 @@ func (s *restTestSuite) TestAssignScore() {
 		Member: reqHeader["clientId"],
 		Score:  reqBody["score"].(float64),
 	}
-	s.mockRedis.ExpectZAdd(testKeyPlayers, player).SetVal(1)
+	s.mockMasterRedis.ExpectZAdd(testKeyPlayers, player).SetVal(1)
 
 	res, err := s.request("POST", resURL.String(), reqHeader, reqBody)
 	s.NoError(err)
 	s.Equal(http.StatusOK, res.Code)
 
 	// error 500
-	s.mockRedis.ExpectZAdd(testKeyPlayers, player).SetErr(errors.New("something went wrong"))
+	s.mockMasterRedis.ExpectZAdd(testKeyPlayers, player).SetErr(errors.New("something went wrong"))
 
 	res, err = s.request("POST", resURL.String(), reqHeader, reqBody)
 	s.NoError(err)
@@ -131,9 +139,14 @@ func (s *restTestSuite) TestGetLeaders() {
 	resURL, err := url.Parse(testGetLeadersURL)
 	s.NoError(err)
 
+	// check replica
+	getRedisClientFn = func(redisMasterClient, redisReplicaClient redis.Redis) redis.Redis {
+		return s.mockReplicaRedisClient
+	}
+
 	// response empty array
 	limit := 10
-	s.mockRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetVal([]redis.Z{})
+	s.mockReplicaRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetVal([]redis.Z{})
 
 	res, err := s.request("GET", resURL.String(), nil, nil)
 	s.NoError(err)
@@ -156,7 +169,7 @@ func (s *restTestSuite) TestGetLeaders() {
 			Score:  2,
 		},
 	}
-	s.mockRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetVal(mockPlayers)
+	s.mockReplicaRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetVal(mockPlayers)
 
 	res, err = s.request("GET", resURL.String(), nil, nil)
 	s.NoError(err)
@@ -167,8 +180,13 @@ func (s *restTestSuite) TestGetLeaders() {
 	s.NoError(json.Unmarshal(bs, &result))
 	s.Equal(len(mockPlayers), len(result.TopPlayers))
 
+	// check master
+	getRedisClientFn = func(redisMasterClient, redisReplicaClient redis.Redis) redis.Redis {
+		return s.mockMasterRedisClient
+	}
+
 	// error 500
-	s.mockRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetErr(errors.New("something went wrong"))
+	s.mockMasterRedis.ExpectZRevRangeWithScores(testKeyPlayers, 0, int64(limit-1)).SetErr(errors.New("something went wrong"))
 
 	res, err = s.request("GET", resURL.String(), nil, nil)
 	s.NoError(err)

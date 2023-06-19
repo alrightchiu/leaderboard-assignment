@@ -14,21 +14,33 @@ services:
     environment:
       - POSTGRES_PASSWORD=somesecret
       - POSTGRES_DB=leaderboard
-  redis:
+  redis-master:
     image: redis:7.0.11-alpine
-    container_name: leaderboard-redis
+    container_name: leaderboard-redis-master
     restart: always
     ports:
-      - 6379:6379
-    command: redis-server --save 60 1 --loglevel warning
+      - 7000:6379
+    command: redis-server --save 60 1 --loglevel debug
     volumes: 
-      - ./cache-data:/data
+      - ./redis-volume/master:/data
+  redis-replica:
+    image: redis:7.0.11-alpine
+    container_name: leaderboard-redis-replica
+    depends_on:
+      - redis-master
+    restart: always
+    ports:
+      - 7001:6379
+    command: redis-server --save 60 1 --loglevel debug --replicaof leaderboard-redis-master 6379
+    volumes: 
+      - ./redis-volume/replica:/data
   rest-server-1:
     build: .
     container_name: leaderboard-rest-server-1
     depends_on:
       - postgresql-db
-      - redis
+      - redis-master
+      - redis-replica
     ports:
       - 9527:8080
     environment:
@@ -36,15 +48,18 @@ services:
       - DB_NAME=leaderboard
       - DB_PASSWORD=somesecret
       - DB_PORT=5432
-      - REDIS_HOST=leaderboard-redis
-      - REDIS_PORT=6379
+      - REDIS_HOST_MASTER=leaderboard-redis-master
+      - REDIS_HOST_REPLICA=leaderboard-redis-replica
+      - REDIS_PORT_MASTER=6379
+      - REDIS_PORT_REPLICA=6379
       - REST_PORT=8080
   rest-server-2:
     build: .
     container_name: leaderboard-rest-server-2
     depends_on:
       - postgresql-db
-      - redis
+      - redis-master
+      - redis-replica
     ports:
       - 9528:8080
     environment:
@@ -52,8 +67,10 @@ services:
       - DB_NAME=leaderboard
       - DB_PASSWORD=somesecret
       - DB_PORT=5432
-      - REDIS_HOST=leaderboard-redis
-      - REDIS_PORT=6379
+      - REDIS_HOST_MASTER=leaderboard-redis-master
+      - REDIS_HOST_REPLICA=leaderboard-redis-replica
+      - REDIS_PORT_MASTER=6379
+      - REDIS_PORT_REPLICA=6379
       - REST_PORT=8080
   nginx:
     image: nginx:1.25-alpine

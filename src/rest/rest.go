@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"leader-board/logger"
 	"leader-board/redis"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,8 @@ import (
 
 var (
 	restPort = os.Getenv("REST_PORT")
+
+	getRedisClientFn = getRedisClient
 )
 
 type TopPlayer struct {
@@ -40,17 +43,20 @@ type PostBody struct {
 }
 
 type impl struct {
-	logger      logger.Logger
-	redisClient redis.Redis
+	logger             logger.Logger
+	redisMasterClient  redis.Redis
+	redisReplicaClient redis.Redis
 }
 
 func RegisterHandler(
 	ginEngine *gin.Engine,
-	redisClient redis.Redis,
+	redisMasterClient redis.Redis,
+	redisReplicaClient redis.Redis,
 ) {
 	rest := &impl{
-		logger:      logger.Get(),
-		redisClient: redisClient,
+		logger:             logger.Get(),
+		redisMasterClient:  redisMasterClient,
+		redisReplicaClient: redisReplicaClient,
 	}
 
 	v1 := ginEngine.Group("/api/v1")
@@ -111,8 +117,8 @@ func (i *impl) assignScore(c *gin.Context) {
 		return
 	}
 
-	if err := i.redisClient.ZAdd(c, redis.KeyPlayers, header.ClientID, body.Score); err != nil {
-		i.logger.Errorf("redisClient.ZAdd err: %+v", err)
+	if err := i.redisMasterClient.ZAdd(c, redis.KeyPlayers, header.ClientID, body.Score); err != nil {
+		i.logger.Errorf("redisMasterClient.ZAdd err: %+v", err)
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -130,7 +136,9 @@ func (i *impl) getLeaders(c *gin.Context) {
 	}
 	limit := params.Limit
 
-	leaders, err := i.redisClient.ZRevRangeWithScores(c, redis.KeyPlayers, 0, int64(limit-1))
+	redisClient := getRedisClientFn(i.redisMasterClient, i.redisReplicaClient)
+
+	leaders, err := redisClient.ZRevRangeWithScores(c, redis.KeyPlayers, 0, int64(limit-1))
 	if err != nil {
 		i.logger.Errorf("redisClient.ZRevRangeWithScores err: %+v", err)
 		c.Status(http.StatusInternalServerError)
@@ -149,4 +157,14 @@ func (i *impl) getLeaders(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
+}
+
+// 3/7 use master, 4/7 use replica
+func getRedisClient(redisMasterClient, redisReplicaClient redis.Redis) redis.Redis {
+	count := 7
+	randNum := rand.Intn(count)
+	if randNum%count < 3 {
+		return redisMasterClient
+	}
+	return redisReplicaClient
 }
