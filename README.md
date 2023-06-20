@@ -28,7 +28,7 @@ curl http://0.0.0.0:8080/api/v1/leaderboard
 
 一共實作了四種策略，並且以 [rakyll/hey](https://github.com/rakyll/hey) 做效能測試
 1. 使用 PostgreSQL(搭配 gorm)實作（8fbf343）
-2. 使用 Redis(搭配 go-redis)實作（4fa543b）
+2. 使用 Redis(搭配 go-redis) 的 sorted set 實作（4fa543b）
 3. 延續 2，加入 nginx 並模擬兩台 rest server（1177640）
 4. 延續 3，加入一個 redis replica，只針對 master 寫入，master 及 replica 皆可讀取（5912fe7）
 
@@ -89,7 +89,7 @@ commit: 1177640
 延續策略 2，加入 nginx 模擬兩台 rest server 的情境，結果比只有一台 rest server 差
 
 指令：`hey -n 100000 -c 1000 -t 10 http://0.0.0.0:8080/api/v1/leaderboard`
-- GET 同時沒有 POST
+- GET 同時每 10ms 打一次 POST
   - 結果：90% 回 200，9% timeout，平均 1.29 s，RPS 383，[report](/hey-report/redis_c_1000_n_100000_t_10_nginx_server_2.txt)
 
 
@@ -104,9 +104,11 @@ commit: 5912fe7
 延續策略 3，多加一個 replica redis，寫入只針對 master redis，讀取以 3/7 對 master 4/7 對 replica 做分配（magic number）
 
 指令：`hey -n 100000 -c 1000 -t 10 http://0.0.0.0:8080/api/v1/leaderboard`
-- GET 同時沒有 POST
+- GET 同時每 10ms 打一次 POST
   - 結果#1：90% 回 200，9.5% timeout，平均 1.34 s，RPS 372，[report](/hey-report/redis_c_1000_n_100000_t_10_nginx_server_2_replica_1.txt)
   - 結果#2：91% 回 200，8.2% timeout，平均 1.39 s，RPS 341，[report](/hey-report/redis_c_1000_n_100000_t_10_nginx_server_2_replica_1_test_2.txt)
+- 調整 nginx 的 worker_connections 1024 => 2048
+  - 結果：97.3% 回 200，2.6 timeout，平均 3.8s，RPS 239，[report](/hey-report/c_1000_n_100000_t_10_redis_nginx_server_2_replica_1_worker_connections_2048.txt)
 
 
 ## 結論
