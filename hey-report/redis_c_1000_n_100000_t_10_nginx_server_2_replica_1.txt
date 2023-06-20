@@ -1,0 +1,49 @@
+
+Summary:
+  Total:	268.2359 secs
+  Slowest:	9.5776 secs
+  Fastest:	0.0122 secs
+  Average:	1.3407 secs
+  Requests/sec:	372.8062
+  
+  Total data:	49271040 bytes
+  Size/request:	546 bytes
+
+Response time histogram:
+  0.012 [1]	|
+  0.969 [8362]	|■■■■
+  1.925 [77484]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  2.882 [4160]	|■■
+  3.838 [128]	|
+  4.795 [6]	|
+  5.751 [19]	|
+  6.708 [13]	|
+  7.665 [9]	|
+  8.621 [46]	|
+  9.578 [12]	|
+
+
+Latency distribution:
+  10% in 1.0350 secs
+  25% in 1.2199 secs
+  50% in 1.3404 secs
+  75% in 1.4721 secs
+  90% in 1.7213 secs
+  95% in 1.9181 secs
+  99% in 2.3805 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:	0.0004 secs, 0.0122 secs, 9.5776 secs
+  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0000 secs
+  req write:	0.0001 secs, 0.0000 secs, 0.0732 secs
+  resp wait:	1.3397 secs, 0.0120 secs, 9.4846 secs
+  resp read:	0.0001 secs, 0.0000 secs, 0.0371 secs
+
+Status code distribution:
+  [200]	90240 responses
+
+Error distribution:
+  [90]	Get "http://0.0.0.0:8080/api/v1/leaderboard": EOF
+  [9500]	Get "http://0.0.0.0:8080/api/v1/leaderboard": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+  [170]	Get "http://0.0.0.0:8080/api/v1/leaderboard": dial tcp 0.0.0.0:8080: connect: connection reset by peer
+

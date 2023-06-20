@@ -1,0 +1,48 @@
+
+Summary:
+  Total:	293.0412 secs
+  Slowest:	9.9119 secs
+  Fastest:	0.0140 secs
+  Average:	1.3924 secs
+  Requests/sec:	341.2489
+  
+  Total data:	32079014 bytes
+  Size/request:	350 bytes
+
+Response time histogram:
+  0.014 [1]	|
+  1.004 [13868]	|■■■■■■■■
+  1.994 [70445]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  2.983 [6531]	|■■■■
+  3.973 [521]	|
+  4.963 [8]	|
+  5.953 [27]	|
+  6.943 [100]	|
+  7.932 [82]	|
+  8.922 [21]	|
+  9.912 [15]	|
+
+
+Latency distribution:
+  10% in 0.8799 secs
+  25% in 1.1837 secs
+  50% in 1.3468 secs
+  75% in 1.5465 secs
+  90% in 1.9145 secs
+  95% in 2.1912 secs
+  99% in 2.9107 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:	0.0016 secs, 0.0140 secs, 9.9119 secs
+  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0000 secs
+  req write:	0.0003 secs, 0.0000 secs, 0.1568 secs
+  resp wait:	1.3885 secs, 0.0139 secs, 9.9108 secs
+  resp read:	0.0001 secs, 0.0000 secs, 0.0127 secs
+
+Status code distribution:
+  [200]	91619 responses
+
+Error distribution:
+  [125]	Get "http://0.0.0.0:8080/api/v1/leaderboard": EOF
+  [8256]	Get "http://0.0.0.0:8080/api/v1/leaderboard": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+

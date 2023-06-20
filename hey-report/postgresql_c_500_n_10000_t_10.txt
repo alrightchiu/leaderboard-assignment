@@ -1,0 +1,51 @@
+ulimit -n 8192
+
+Summary:
+  Total:	200.7676 secs
+  Slowest:	9.9951 secs
+  Fastest:	0.0021 secs
+  Average:	0.3309 secs
+  Requests/sec:	49.8088
+  
+  Total data:	1561668 bytes
+  Size/request:	543 bytes
+
+Response time histogram:
+  0.002 [1]	|
+  1.001 [2737]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  2.001 [16]	|
+  3.000 [13]	|
+  3.999 [14]	|
+  4.999 [10]	|
+  5.998 [10]	|
+  6.997 [21]	|
+  7.997 [13]	|
+  8.996 [11]	|
+  9.995 [30]	|
+
+
+Latency distribution:
+  10% in 0.0039 secs
+  25% in 0.0067 secs
+  50% in 0.0222 secs
+  75% in 0.0630 secs
+  90% in 0.1723 secs
+  95% in 0.6012 secs
+  99% in 9.3922 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:	0.0007 secs, 0.0021 secs, 9.9951 secs
+  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0000 secs
+  req write:	0.0002 secs, 0.0000 secs, 0.0333 secs
+  resp wait:	0.3290 secs, 0.0020 secs, 9.9944 secs
+  resp read:	0.0001 secs, 0.0000 secs, 0.0039 secs
+
+Status code distribution:
+  [200]	2876 responses
+
+Error distribution:
+  [6995]	Get "http://0.0.0.0/api/v1/leaderboard": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+  [3]	Get "http://0.0.0.0/api/v1/leaderboard": dial tcp 0.0.0.0:80: connect: connection reset by peer
+  [125]	Get "http://0.0.0.0/api/v1/leaderboard": dial tcp 0.0.0.0:80: i/o timeout (Client.Timeout exceeded while awaiting headers)
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": read tcp 127.0.0.1:53836->127.0.0.1:80: read: connection reset by peer
+

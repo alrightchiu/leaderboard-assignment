@@ -1,0 +1,62 @@
+ulimit -n 8192
+
+Summary:
+  Total:	783.3598 secs
+  Slowest:	10.8595 secs
+  Fastest:	0.0007 secs
+  Average:	0.6733 secs
+  Requests/sec:	127.6553
+  
+  Total data:	8792256 bytes
+  Size/request:	205 bytes
+
+Response time histogram:
+  0.001 [1]	|
+  1.087 [36827]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  2.172 [2418]	|■■■
+  3.258 [1088]	|■
+  4.344 [592]	|■
+  5.430 [517]	|■
+  6.516 [363]	|
+  7.602 [303]	|
+  8.688 [388]	|
+  9.774 [250]	|
+  10.859 [79]	|
+
+
+Latency distribution:
+  10% in 0.0057 secs
+  25% in 0.0193 secs
+  50% in 0.0832 secs
+  75% in 0.5527 secs
+  90% in 1.7507 secs
+  95% in 3.8871 secs
+  99% in 8.5236 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:	0.0109 secs, 0.0007 secs, 10.8595 secs
+  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0000 secs
+  req write:	0.0001 secs, 0.0000 secs, 0.2097 secs
+  resp wait:	0.4753 secs, 0.0006 secs, 10.7647 secs
+  resp read:	0.0003 secs, 0.0000 secs, 0.1844 secs
+
+Status code distribution:
+  [200]	16192 responses
+  [500]	26634 responses
+
+Error distribution:
+  [4]	Get "http://0.0.0.0/api/v1/leaderboard": EOF
+  [50704]	Get "http://0.0.0.0/api/v1/leaderboard": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+  [130]	Get "http://0.0.0.0/api/v1/leaderboard": dial tcp 0.0.0.0:80: connect: connection reset by peer
+  [2228]	Get "http://0.0.0.0/api/v1/leaderboard": dial tcp 0.0.0.0:80: i/o timeout (Client.Timeout exceeded while awaiting headers)
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": read tcp 127.0.0.1:49329->127.0.0.1:80: read: connection reset by peer
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": read tcp 127.0.0.1:49396->127.0.0.1:80: read: connection reset by peer
+  ... total: 3556
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": readLoopPeekFailLocked: read tcp 127.0.0.1:54904->127.0.0.1:80: read: connection reset by peer
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": write tcp 127.0.0.1:50992->127.0.0.1:80: write: broken pipe
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": write tcp 127.0.0.1:55513->127.0.0.1:80: write: broken pipe
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": write tcp 127.0.0.1:56865->127.0.0.1:80: write: broken pipe
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": write tcp 127.0.0.1:62717->127.0.0.1:80: write: broken pipe
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": write tcp 127.0.0.1:62783->127.0.0.1:80: write: broken pipe
+  [1]	Get "http://0.0.0.0/api/v1/leaderboard": write tcp 127.0.0.1:62849->127.0.0.1:80: write: broken pipe
+
