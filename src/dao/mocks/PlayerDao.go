@@ -4,7 +4,7 @@ package mocks
 
 import (
 	context "context"
-	dao "leader-board/dao"
+	dao "leaderboard/dao"
 
 	mock "github.com/stretchr/testify/mock"
 )

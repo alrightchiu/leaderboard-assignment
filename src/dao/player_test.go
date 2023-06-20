@@ -2,7 +2,7 @@ package dao
 
 import (
 	"context"
-	"leader-board/db"
+	"leaderboard/db"
 	"testing"
 
 	"github.com/stretchr/testify/suite"

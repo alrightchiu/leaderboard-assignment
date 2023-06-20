@@ -1,4 +1,4 @@
-module leader-board
+module leaderboard
 
 go 1.20
 

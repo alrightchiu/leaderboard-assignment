@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"leader-board/constant"
-	"leader-board/logger"
-	"leader-board/redis"
-	"leader-board/rest"
+	"leaderboard/constant"
+	"leaderboard/logger"
+	"leaderboard/redis"
+	"leaderboard/rest"
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"

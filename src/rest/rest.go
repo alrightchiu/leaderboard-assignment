@@ -3,8 +3,8 @@ package rest
 import (
 	"context"
 	"fmt"
-	"leader-board/logger"
-	"leader-board/redis"
+	"leaderboard/logger"
+	"leaderboard/redis"
 	"math/rand"
 	"net/http"
 	"os"

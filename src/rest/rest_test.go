@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"leader-board/redis"
+	"leaderboard/redis"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
